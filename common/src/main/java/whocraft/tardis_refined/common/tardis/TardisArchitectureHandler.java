@@ -27,6 +27,9 @@ public class TardisArchitectureHandler {
     public static final BlockPos CORRIDOR_ENTRY_POS = new BlockPos(1000, 100, 0);
     public static final int INTERIOR_SIZE = 150;
 
+    public static final String[] ARS_TREE_STAGES = {"rooms/ars/room_ars_stage_one", "rooms/ars/room_ars_stage_two", "rooms/ars/room_ars_stage_three"
+            , "rooms/ars/room_ars_stage_four", "rooms/ars/room_ars_stage_five"};
+
     public static void generateDesktop(ServerLevel operator, DesktopTheme theme) {
         TardisRefined.LOGGER.debug(String.format("Attempting to generate desktop theme: %s for TARDIS.", theme.id));
 
@@ -93,7 +96,7 @@ public class TardisArchitectureHandler {
             structure.placeInWorld(operator.getLevel(), CORRIDOR_ENTRY_POS.subtract(offsetPosition), CORRIDOR_ENTRY_POS.subtract(offsetPosition), new StructurePlaceSettings(), operator.getLevel().random, 3);
         });
 
-        generateArsTree(operator);
+        generateArsTreeStage(operator, 0);
 
         // Generate workshop.
         structureNBT = operator.getLevel().getStructureManager().get(new ResourceLocation(TardisRefined.MODID, "rooms/workshop"));
@@ -104,8 +107,10 @@ public class TardisArchitectureHandler {
 
     }
 
-    public static void generateArsTree(ServerLevel level) {
-        Optional<StructureTemplate> structureNBT = level.getLevel().getStructureManager().get(new ResourceLocation(TardisRefined.MODID, "rooms/room_ars_stage_one"));
+    public static void generateArsTreeStage(ServerLevel level, int stage) {
+        if (stage >= ARS_TREE_STAGES.length) {stage = ARS_TREE_STAGES.length -1;}
+        if (stage < 0) {stage = 0;}
+        Optional<StructureTemplate> structureNBT = level.getLevel().getStructureManager().get(new ResourceLocation(TardisRefined.MODID, ARS_TREE_STAGES[stage]));
         structureNBT.ifPresent(structure -> {
             BlockPos position = new BlockPos(1011,97,3);
             structure.placeInWorld(level.getLevel(), position, position, new StructurePlaceSettings(), level.getLevel().random, 3);

@@ -245,7 +245,7 @@ public class ControlEntity extends PathfinderMob {
                         var xCord = this.position().x();
                         var yCord = this.position().y() + 0.15f;
                         var zCord = this.position().z();
-                        ClientHelper.playParticle((ClientLevel) level, ParticleTypes.ELECTRIC_SPARK, new BlockPos( xCord, yCord, zCord), 0.0D, 0.25D, 0.0D);
+                        ClientHelper.playParticle((ClientLevel) level, ParticleTypes.ELECTRIC_SPARK, new Vec3( xCord, yCord, zCord), 0.0D, 0.25D, 0.0D);
                     }
                 }
             }

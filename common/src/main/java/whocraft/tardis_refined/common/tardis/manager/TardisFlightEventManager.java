@@ -1,13 +1,10 @@
 package whocraft.tardis_refined.common.tardis.manager;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffectUtil;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import whocraft.tardis_refined.common.capability.TardisLevelOperator;
@@ -36,6 +33,8 @@ public class TardisFlightEventManager {
     private int ticksInTheDangerZone = 0;
     private int requiredDangerZoneRequests = 0;
     private int dangerZoneResponses = 0;
+
+    private int collectedTXPPool = 0;
 
     private float dangerZoneShakeScale = 0f;
 
@@ -107,7 +106,6 @@ public class TardisFlightEventManager {
         return (isEventInComboTime() ? 20 : 60);  // This will be expanded on when Stats are added.
     }
 
-
     /*
     * Calculates the number of required control requests based on the distance between the current and target location.
     * */
@@ -118,6 +116,7 @@ public class TardisFlightEventManager {
             this.controlResponses = 0;
             this.isWaitingForControlResponse = false;
             this.controlRequestCooldown = getControlRequestCooldown();
+            this.collectedTXPPool = 0;
         }
 
         // Calculate the distance between two points
@@ -157,7 +156,7 @@ public class TardisFlightEventManager {
                     this.ticksSincePrompted = 0;
                 }
 
-                if (!this.isInDangerZone && !this.areControlEventsComplete() && ticksSincePrompted > 30 * 20) {
+                if (!this.isInDangerZone && !this.areControlEventsComplete() && ticksSincePrompted > 30 * 20 && this.requiredControlRequests > 0) {
                     if (this.operator.getLevel().getGameTime() % (5 * 20) >= 0 && this.operator.getLevel().random.nextInt(10) == 0) {
                         this.isInDangerZone = true;
                         this.ticksInTheDangerZone = 0;
@@ -227,6 +226,7 @@ public class TardisFlightEventManager {
 
         // The requests are too great, the TARDIS needs to crash.
         if (this.requiredDangerZoneRequests >= 10) {
+            this.collectedTXPPool = 0; // You crash, so you gain no TXP.
             this.operator.getControlManager().crash();
             this.isWaitingForControlResponse = false;
             this.isInDangerZone = false;
@@ -239,10 +239,13 @@ public class TardisFlightEventManager {
         // Assign a cooldown between the controls determined by stats.
         this.controlRequestCooldown = getControlRequestCooldown();
 
+        var gainedTXP = 0;
+
         // Increment the number of control responses
         // If we're in the danger zone, we don't want to advance the normal flight. We'd rather force the player to get out of it first.
         if (isInDangerZone()) {
             this.dangerZoneResponses++;
+            gainedTXP++; // Gain an additional TXP if you're in the danger-zone.
         } else {
             this.controlResponses++;
         }
@@ -251,12 +254,16 @@ public class TardisFlightEventManager {
 
         if (this.controlResponses == this.requiredControlRequests) {
             operator.getLevel().playSound(null, entity.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.AMBIENT, 10, 1);
+            gainedTXP += operator.getLevel().random.nextInt(2);
         } else {
             if (this.isEventInComboTime()) {
                 float pitch = 1.25f * getPercentComplete();
                 operator.getLevel().playSound(null, entity.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.AMBIENT, 10, pitch);
+                gainedTXP += operator.getLevel().random.nextInt(3);
             }
         }
+
+        this.collectedTXPPool += gainedTXP; // Add the gained TXP to the TXP pool.
 
     }
 
@@ -275,4 +282,7 @@ public class TardisFlightEventManager {
         }
     }
 
+    public int getCollectedTXPPool() {
+        return collectedTXPPool;
+    }
 }

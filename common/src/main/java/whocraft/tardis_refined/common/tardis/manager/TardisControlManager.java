@@ -323,6 +323,10 @@ public class TardisControlManager {
 
         operator.getExteriorManager().playSoundAtShell(SoundRegistry.TARDIS_LAND.get(), SoundSource.BLOCKS, 1, 1);
         operator.getLevel().playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, SoundRegistry.TARDIS_LAND.get(), SoundSource.AMBIENT, 1000f, 1f);
+
+        var collectedTXP = this.operator.getTardisFlightEventManager().getCollectedTXPPool();
+        System.out.println("Gained a total of " + collectedTXP + " TXP.");
+        this.operator.getTardisSkillManager().advanceLevelProgress(collectedTXP);
     }
 
     public void calculatePositionToLand(BlockPos landingLocation) {

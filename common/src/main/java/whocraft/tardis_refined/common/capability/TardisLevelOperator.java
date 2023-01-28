@@ -13,6 +13,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.phys.Vec3;
 import whocraft.tardis_refined.api.event.TardisEvents;
 import whocraft.tardis_refined.common.tardis.manager.TardisFlightEventManager;
+import whocraft.tardis_refined.common.tardis.manager.TardisSkillManager;
 import whocraft.tardis_refined.constants.NbtConstants;
 import whocraft.tardis_refined.client.TardisClientData;
 import whocraft.tardis_refined.common.blockentity.door.ITardisInternalDoor;
@@ -38,7 +39,7 @@ public class TardisLevelOperator {
     private TardisInteriorManager interiorManager;
     private TardisControlManager controlManager;
     private TardisFlightEventManager tardisFlightEventManager;
-
+    private TardisSkillManager skillManager;
 
     private TardisClientData tardisClientData;
 
@@ -49,6 +50,7 @@ public class TardisLevelOperator {
         this.controlManager = new TardisControlManager(this);
         this.tardisFlightEventManager = new TardisFlightEventManager(this);
         this.tardisClientData = new TardisClientData(level.dimension());
+        this.skillManager = new TardisSkillManager(this);
     }
 
     @ExpectPlatform
@@ -69,6 +71,7 @@ public class TardisLevelOperator {
         compoundTag = this.interiorManager.saveData(compoundTag);
         compoundTag = this.controlManager.saveData(compoundTag);
         compoundTag = this.tardisFlightEventManager.saveData(compoundTag);
+        compoundTag = this.skillManager.saveData(compoundTag);
 
         return compoundTag;
     }
@@ -88,9 +91,10 @@ public class TardisLevelOperator {
         this.interiorManager.loadData(tag);
         this.controlManager.loadData(tag);
         this.tardisFlightEventManager.loadData(tag);
-
+        this.skillManager.loadData(tag);
 
         tardisClientData.sync((ServerLevel) this.getLevel());
+
     }
 
     public Level getLevel() {
@@ -101,6 +105,7 @@ public class TardisLevelOperator {
         interiorManager.tick(level);
         controlManager.tick(level);
         tardisFlightEventManager.tick();
+        skillManager.delayedTick();
 
         var shouldSync = false;
 
@@ -277,6 +282,9 @@ public class TardisLevelOperator {
 
     public TardisFlightEventManager getTardisFlightEventManager() {
         return this.tardisFlightEventManager;
+    }
+    public TardisSkillManager getTardisSkillManager() {
+        return this.skillManager;
     }
 
 }
