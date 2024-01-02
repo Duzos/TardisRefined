@@ -20,7 +20,8 @@ public class InitiativeConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.RANDOM, new Vector3f(-0.8499999f, 0.75f, 0.4500001f), EntityDimensions.scalable(0.1f, 0.1f)),
                 new ControlSpecification(ConsoleControl.MONITOR, new Vector3f(-0.5000000111758709F, 1.4000014774501324F, 0.32499980367720127F), EntityDimensions.scalable(0.3F, 0.25F)),
                 new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(-0.47499999962747097F, 0.9499969482421875F, -0.29999980330467224F), EntityDimensions.scalable(0.3F, 0.15F)),
-                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.0F, 0.8500015139579773F, -0.5999995470046997F), EntityDimensions.scalable(0.2F, 0.15F))
+                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.0F, 0.8500015139579773F, -0.5999995470046997F), EntityDimensions.scalable(0.2F, 0.15F)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(-0.9500000029802322F, 0.5749999862164259F, -0.5499997213482857F), EntityDimensions.scalable(0.25F, 0.1F)),
         };
     }
 }

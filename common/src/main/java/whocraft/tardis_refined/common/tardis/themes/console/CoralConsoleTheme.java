@@ -21,7 +21,8 @@ public class CoralConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.RANDOM, new Vector3f(-0.45f, 0.6f, 0.9f), EntityDimensions.scalable(0.1f, 0.1f)),
                 new ControlSpecification(ConsoleControl.MONITOR, new Vector3f(0.7749999742954969F, 0.8749999981373549F, -0.5F), EntityDimensions.scalable(0.40000004F, 0.35000002F)),
                 new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(1.0500000230967999F, 0.3749969359487295F, 0.724999999627471F), EntityDimensions.scalable(0.2F, 0.1F)),
-                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(-1.0750000234693289F, 0.37500000558793545F, -0.724999999627471F), EntityDimensions.scalable(0.15F, 0.1F))
+                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(-1.0750000234693289F, 0.37500000558793545F, -0.724999999627471F), EntityDimensions.scalable(0.15F, 0.1F)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(-1.150000048801303F, 0.4750000014901161F, 0.4749999940395355F),  EntityDimensions.scalable(0.15F, 0.1F))
         };
     }
 }

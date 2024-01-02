@@ -18,9 +18,11 @@ public class CrystalConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.DOOR_TOGGLE, new Vector3f(1.1999999284744263F, 0.4250000063329935F, -0.3500000238418579F), EntityDimensions.scalable(0.19999984F, 0.19999978F)),
                 new ControlSpecification(ConsoleControl.ROTATE, new Vector3f(-0.5900000333786011F, 0.4250000063329935F, -1.0199999809265137F), EntityDimensions.scalable(0.19999984F, 0.19999984F)),
                 new ControlSpecification(ConsoleControl.THROTTLE, new Vector3f(-0.6499999761581421F, 1.0500000566244125F, -0.4000000059604645F), EntityDimensions.scalable(0.29999983F, 0.34999985F)),
+                new ControlSpecification(ConsoleControl.THROTTLE, new Vector3f(0.6499999761581421F, 1.0500000566244125F, 0.4000000059604645F), EntityDimensions.scalable(0.29999983F, 0.34999985F)),
                 new ControlSpecification(ConsoleControl.INCREMENT, new Vector3f(0.30000001192092896F, 0.4000000059604645F, 1.2000000476837158F), EntityDimensions.scalable(0.24999978F, 0.14999984F)),
                 new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(-0.2900000214576721F, 0.4250000063329935F, -1.2200000286102295F), EntityDimensions.scalable(0.2F, 0.10000001F)),
-                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.6599999666213989F, 0.5000000149011612F, -1.0199999809265137F), EntityDimensions.scalable(0.1F, 0.1F))
+                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.6599999666213989F, 0.5000000149011612F, -1.0199999809265137F), EntityDimensions.scalable(0.1F, 0.1F)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(0.7000000178813934F, 0.4000000059604645F, 1.2000000476837158F), EntityDimensions.scalable(0.24999978F, 0.14999984F))
         };
     }
 }

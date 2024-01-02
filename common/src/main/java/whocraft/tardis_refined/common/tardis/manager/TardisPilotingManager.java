@@ -58,6 +58,9 @@ public class TardisPilotingManager extends BaseHandler{
 
     private boolean autoLand = false;
 
+    private int speedModifier = 1;
+    private int maxSpeedModifier = 5;
+
     public TardisPilotingManager(TardisLevelOperator operator) {
         this.operator = operator;
     }
@@ -195,6 +198,18 @@ public class TardisPilotingManager extends BaseHandler{
         }
 
     }
+
+    public void incrementSpeedModifier() {
+        this.speedModifier = speedModifier >= maxSpeedModifier ? 1 : this.speedModifier + 1;
+    }
+
+    public void deincrementSpeedModifier() {
+        this.speedModifier = speedModifier <= 1 ? this.maxSpeedModifier : this.speedModifier - 1;
+    }
+
+    public int getSpeedModifier() {return this.speedModifier;}
+
+    public int getMaxSpeedModifier() {return this.maxSpeedModifier;}
 
     public boolean isInFlight() {
         return this.isInFlight;
@@ -401,6 +416,7 @@ public class TardisPilotingManager extends BaseHandler{
 
             exteriorManager.placeExteriorBlock(operator, location);
 
+            operator.getTardisFlightEventManager().resetTravelLogic();
             exteriorManager.playSoundAtShell(SoundRegistry.TARDIS_LAND.get(), SoundSource.BLOCKS, 1, 1);
             level.playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, SoundRegistry.TARDIS_LAND.get(), SoundSource.AMBIENT, 10f, 1f);
             level.playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, SoundRegistry.DESTINATION_DING.get(), SoundSource.AMBIENT, 10f, 1f);

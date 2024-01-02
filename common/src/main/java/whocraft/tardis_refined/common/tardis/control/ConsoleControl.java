@@ -19,7 +19,8 @@ public enum ConsoleControl implements StringRepresentable {
     THROTTLE("throttle", new ThrottleControl(), "control.tardis_refined.throttle"),
     MONITOR("monitor", new MonitorControl(), "control.tardis_refined.monitor"),
     DIMENSION("dimension", new DimensionalControl(), "control.tardis_refined.dimension"),
-    FAST_RETURN("fast_return", new FastReturnControl(), "control.tardis_refined.fast_return");
+    FAST_RETURN("fast_return", new FastReturnControl(), "control.tardis_refined.fast_return"),
+    SPEED_MODIFIER("speed_modifier", new SpeedModifierControl(), "control.tardis_refined.speed_modifier");
 
     private final String id;
     private final Control control;

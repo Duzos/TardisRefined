@@ -176,7 +176,7 @@ public class ControlEntity extends Entity {
             return InteractionResult.FAIL;
         }
 
-        if (player.getMainHandItem().getItem() == Items.COMMAND_BLOCK_MINECART) {
+        if (player.getOffhandItem().getItem() == Items.COMMAND_BLOCK_MINECART) {
             this.handleControlSizeAndPositionAdjustment(player);
             return InteractionResult.SUCCESS;
         }
@@ -228,9 +228,9 @@ public class ControlEntity extends Entity {
         float height = this.getEntityData().get(SCALE_HEIGHT);
         float incrementAmount = 0.05F;
         float posIncrementAmount = 0.025F;
-        Item offhandItem = player.getOffhandItem().getItem();
+        Item mainhandItem = player.getMainHandItem().getItem();
 
-        if (offhandItem == Items.REDSTONE) { //Print position output to console
+        if (mainhandItem == Items.REDSTONE) { //Print position output to console
             if (this.controlSpecification != null)
                 TardisRefined.LOGGER.info("Control Info for: " + this.controlSpecification.control().getSerializedName());
             if (this.consoleBlockPos != null){
@@ -245,20 +245,20 @@ public class ControlEntity extends Entity {
             TardisRefined.LOGGER.info("Size (Width, Height): " + finalWidth + "F, " + finalHeight + "F");
         }
         else {
-            if (offhandItem == Items.EMERALD){ //Adjust X
+            if (mainhandItem == Items.EMERALD){ //Adjust X
                 this.setPos(this.position().add(player.isShiftKeyDown() ? -posIncrementAmount : posIncrementAmount, 0, 0));
             }
-            if (offhandItem == Items.DIAMOND) { //Adjust Y
+            if (mainhandItem == Items.DIAMOND) { //Adjust Y
                 this.setPos(this.position().add(0, player.isShiftKeyDown() ? -posIncrementAmount : posIncrementAmount, 0));
             }
-            if (offhandItem == Items.GOLD_INGOT){ //Adjust Z
+            if (mainhandItem == Items.GOLD_INGOT){ //Adjust Z
                 this.setPos(this.position().add(0, 0, player.isShiftKeyDown() ? posIncrementAmount : -posIncrementAmount));
             }
-            if (offhandItem == Items.IRON_INGOT){ //Adjust Size Width
+            if (mainhandItem == Items.IRON_INGOT){ //Adjust Size Width
                 float newWidth = player.isShiftKeyDown() ? width - incrementAmount : width + incrementAmount;
                 this.setSizeAndUpdate(newWidth, height);
             }
-            if (offhandItem == Items.COPPER_INGOT){ //Adjust Size Height
+            if (mainhandItem == Items.COPPER_INGOT){ //Adjust Size Height
                 float newHeight = player.isShiftKeyDown() ? height - incrementAmount : height + incrementAmount;
                 this.setSizeAndUpdate(width, newHeight);
             }
@@ -293,6 +293,9 @@ public class ControlEntity extends Entity {
                 upgradeHandler.setUpgradePoints(50000);
 
                 serverLevel.addParticle(ParticleTypes.HEART, consoleBlockPos.getX() + 0.5, consoleBlockPos.getY() + 2, consoleBlockPos.getZ() + 0.5, 0, 0.5, 0);
+                Control control = this.controlSpecification.control().getControl();
+                PitchedSound playedSound = control.getSuccessSound(cap, this.consoleTheme, true);
+                control.playControlPitchedSound(cap, this, playedSound);
             }
         });
     }
@@ -322,6 +325,10 @@ public class ControlEntity extends Entity {
                 UpgradeHandler upgradeHandler = cap.getUpgradeHandler();
                 upgradeHandler.addUpgradeXP(5);
                 serverLevel.addParticle(ParticleTypes.HEART, consoleBlockPos.getX() + 0.5, consoleBlockPos.getY() + 2, consoleBlockPos.getZ() + 0.5, 0, 0.5, 0);
+
+                Control control = this.controlSpecification.control().getControl();
+                PitchedSound playedSound = control.getSuccessSound(cap, this.consoleTheme, true);
+                control.playControlPitchedSound(cap, this, playedSound);
             }
         });
     }

@@ -20,7 +20,8 @@ public class ToyotaConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.RANDOM, new Vector3f(0.5750000234693289F, 0.550000011920929F, -0.7249999884516001F), EntityDimensions.scalable(0.15F, 0.1F)),
                 new ControlSpecification(ConsoleControl.MONITOR, new Vector3f(0.3499999940395355F, 1.0499999523162842F, 0.6000000238418579F), EntityDimensions.scalable(0.35000002F, 0.25F)),
                 new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(0.7000000476837158F, 0.6000030636787415F, -0.39999979734420776F), EntityDimensions.scalable(0.3F, 0.1F)),
-                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(-0.65f, 0.5f, -0.82500017f), EntityDimensions.scalable(0.15F, 0.1F))
+                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(-0.65f, 0.5f, -0.82500017f), EntityDimensions.scalable(0.15F, 0.1F)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(-0.015000002458691597F, 0.5249999761581421F, 0.9250000230967999F), EntityDimensions.scalable(0.25F, 0.10000001F)),
         };
     }
 }

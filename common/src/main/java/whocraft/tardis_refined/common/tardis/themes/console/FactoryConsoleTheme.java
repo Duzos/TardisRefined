@@ -20,7 +20,8 @@ public class FactoryConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.RANDOM, new Vector3f(-0.06f, .5f, 1f), EntityDimensions.scalable(0.1f, 0.1f)),
                 new ControlSpecification(ConsoleControl.MONITOR, new Vector3f(-0.6000000238418579F, 0.6249999757856131F, -0.5750000234693289F), EntityDimensions.scalable(0.2F, 0.1F)),
                 new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.849999975413084F, 0.5250015258789062F, 0.41500015184283257F), EntityDimensions.scalable(0.15F, 0.1F)),
-                new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(-0.6250000353902578F, 0.550000011920929F, -0.8599998597055674F), EntityDimensions.scalable(0.1f, 0.1f))
+                new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(-0.6250000353902578F, 0.550000011920929F, -0.8599998597055674F), EntityDimensions.scalable(0.1f, 0.1f)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(-0.9750000163912773F, 0.5750000011175871F, 0.3249999899417162F), EntityDimensions.scalable(0.1f, 0.1f)),
         };
     }
 }

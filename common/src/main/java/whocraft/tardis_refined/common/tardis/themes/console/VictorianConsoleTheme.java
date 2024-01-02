@@ -20,7 +20,8 @@ public class VictorianConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.RANDOM, new Vector3f(0.2500000298023224F, 0.6500030755996704F, -0.724999999627471F), EntityDimensions.scalable(0.15F, 0.1F)),
                 new ControlSpecification(ConsoleControl.MONITOR, new Vector3f(-0.5499999634921551F, 0.6500030755996704F, -0.29999999329447746F), EntityDimensions.scalable(0.3F, 0.15F)),
                 new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(0.800000011920929F, 0.5000015497207642F, -0.8250000234693289F), EntityDimensions.scalable(0.2F, 0.1F)),
-                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.5499999523162842F, 0.525000000372529F, 0.7000001072883606F), EntityDimensions.scalable(0.15F, 0.1F))
+                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.5499999523162842F, 0.525000000372529F, 0.7000001072883606F), EntityDimensions.scalable(0.15F, 0.1F)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(-0.8499999567866325F, 0.5250030364841223F, 0.2500000074505806F), EntityDimensions.scalable(0.25F, 0.15F))
         };
     }
 }

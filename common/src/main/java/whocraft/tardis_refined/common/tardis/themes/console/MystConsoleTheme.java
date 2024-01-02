@@ -20,7 +20,8 @@ public class MystConsoleTheme extends ConsoleThemeDetails {
                 new ControlSpecification(ConsoleControl.RANDOM, new Vector3f(1.149999976158142F, 0.5500015020370483F, 0.19999998807907104F), EntityDimensions.scalable(0.15F, 0.1F)),
                 new ControlSpecification(ConsoleControl.MONITOR, new Vector3f(0.75F, 0.5750015247613192F, 0.424999987706542F), EntityDimensions.scalable(0.40000004F, 0.15F)),
                 new ControlSpecification(ConsoleControl.DIMENSION, new Vector3f(2.384185648907078E-8F, 0.649999987334013F, -1.0249999519437551F), EntityDimensions.scalable(0.15F, 0.15F)),
-                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.45000005f, 0.5500061f, 1.05f), EntityDimensions.scalable(0.15F, 0.1F))
+                new ControlSpecification(ConsoleControl.FAST_RETURN, new Vector3f(0.45000005f, 0.5500061f, 1.05f), EntityDimensions.scalable(0.15F, 0.1F)),
+                new ControlSpecification(ConsoleControl.SPEED_MODIFIER, new Vector3f(-0.3249999810010209F, 0.5249999742954969F, -1.0999999772757292F), EntityDimensions.scalable(0.25F, 0.2F)),
         };
     }
 }
