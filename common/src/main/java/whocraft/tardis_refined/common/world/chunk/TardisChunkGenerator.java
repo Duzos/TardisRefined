@@ -27,11 +27,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import whocraft.tardis_refined.TardisRefined;
 import whocraft.tardis_refined.common.world.ChunkGenerators;
 import whocraft.tardis_refined.constants.TardisDimensionConstants;
-import whocraft.tardis_refined.registry.ARSStructurePieceRegistry;
-import whocraft.tardis_refined.registry.BlockRegistry;
+import whocraft.tardis_refined.registry.TRARSStructurePieceRegistry;
+import whocraft.tardis_refined.registry.TRBlockRegistry;
 
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -122,20 +121,21 @@ public class TardisChunkGenerator extends ChunkGenerator {
                 placePieceInWorld(pLevel, pieceToPlace, pChunk, true);
 
             } else {
-                if (random.nextBoolean()) {
+                if (random.nextInt(3) == 0) {
                     ResourceLocation pieceToPlace = getRandomRoomPiece().getResourceLocation();
                     placePieceInWorld(pLevel, pieceToPlace, pChunk, false);
                 } else {
-                    ResourceLocation pieceToPlace = getRandomCorridorPiece().getResourceLocation();
+
+                    ResourceLocation pieceToPlace = getRandomRoomPiece().getResourceLocation();
                     placePieceInWorld(pLevel, pieceToPlace, pChunk, false);
                 }
 
-
-                if (random.nextBoolean()) {
+                if (random.nextInt(3) == 0) {
                     ResourceLocation pieceToPlace = getRandomRoomPiece().getResourceLocation();
                     placePieceInWorld(pLevel, pieceToPlace, pChunk, true);
                 } else {
-                    ResourceLocation pieceToPlace = getRandomCorridorPiece().getResourceLocation();
+
+                    ResourceLocation pieceToPlace = getRandomRoomPiece().getResourceLocation();
                     placePieceInWorld(pLevel, pieceToPlace, pChunk, true);
                 }
             }
@@ -188,7 +188,7 @@ public class TardisChunkGenerator extends ChunkGenerator {
                 access.setBlockState(pos, Blocks.BEDROCK.defaultBlockState(), false);
             } else {
 
-                access.setBlockState(pos, BlockRegistry.FOOLS_STONE.get().defaultBlockState(), false);
+                access.setBlockState(pos, TRBlockRegistry.FOOLS_STONE.get().defaultBlockState(), false);
             }
         }
 
@@ -241,7 +241,7 @@ public class TardisChunkGenerator extends ChunkGenerator {
      */
     private ARSStructurePiece getRandomCorridorPiece() {
 
-        return ARSStructurePieceRegistry.CORRIDORS.get(this.random.nextInt(ARSStructurePieceRegistry.CORRIDORS.size()));
+        return TRARSStructurePieceRegistry.CORRIDORS.get(this.random.nextInt(TRARSStructurePieceRegistry.CORRIDORS.size()));
     }
 
 
@@ -251,7 +251,7 @@ public class TardisChunkGenerator extends ChunkGenerator {
      * @return random room ARS piece from the registry.
      */
     private ARSStructurePiece getRandomRoomPiece() {
-        return ARSStructurePieceRegistry.ROOMS.get(this.random.nextInt(ARSStructurePieceRegistry.ROOMS.size()));
+        return TRARSStructurePieceRegistry.ROOMS.get(this.random.nextInt(TRARSStructurePieceRegistry.ROOMS.size()));
     }
 
 

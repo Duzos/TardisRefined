@@ -8,12 +8,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import whocraft.tardis_refined.api.event.TardisEvents;
 import whocraft.tardis_refined.common.block.console.GlobalConsoleBlock;
@@ -29,9 +30,12 @@ import whocraft.tardis_refined.common.util.PlayerUtil;
 import whocraft.tardis_refined.common.util.TardisHelper;
 import whocraft.tardis_refined.constants.ModMessages;
 import whocraft.tardis_refined.constants.NbtConstants;
-import whocraft.tardis_refined.registry.SoundRegistry;
+import whocraft.tardis_refined.registry.TRSoundRegistry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class TardisPilotingManager extends BaseHandler {
 
@@ -39,7 +43,7 @@ public class TardisPilotingManager extends BaseHandler {
     private static final int TICKS_LANDING_MAX = 9 * 20;
     private static final int TICKS_COOLDOWN_MAX = (10 * 60) * 20;
     private static final double DEFAULT_MAXIMUM_FUEL = 1000;
-    private static final double FLIGHT_COST = 3;
+    private static final double FLIGHT_COST = 0.5f;
 
     public static final int MAX_THROTTLE_STAGE = 5;
 
@@ -52,7 +56,7 @@ public class TardisPilotingManager extends BaseHandler {
     // Inflight timers (ticks)
     private boolean isInFlight = false;
     private int ticksInFlight = 0;
-    private int flightDistance = 0;
+    private int flightDistance = 100;
     private int distanceCovered = 0;
     private int ticksLanding = 0;
     private int ticksTakingOff = 0;
@@ -78,6 +82,8 @@ public class TardisPilotingManager extends BaseHandler {
     private GlobalConsoleBlockEntity currentConsole;
     private BlockPos currentConsoleBlockPos = BlockPos.ZERO;
 
+    private boolean isPassivelyRefuelling = false;
+
     public TardisPilotingManager(TardisLevelOperator operator) {
         this.operator = operator;
     }
@@ -94,6 +100,7 @@ public class TardisPilotingManager extends BaseHandler {
         this.isHandbrakeOn = tag.getBoolean(NbtConstants.IS_HANDBRAKE_ON);
         this.throttleStage = tag.getInt(NbtConstants.THROTTLE_STAGE);
 
+        this.isPassivelyRefuelling = tag.getBoolean(NbtConstants.IS_PASSIVELY_REFUELING);
 
         this.targetLocation = NbtConstants.getTardisNavLocation(tag, "ctrl_target", operator);
         this.fastReturnLocation = NbtConstants.getTardisNavLocation(tag, "ctrl_fr_loc", operator);
@@ -138,6 +145,7 @@ public class TardisPilotingManager extends BaseHandler {
         tag.putInt(NbtConstants.FLIGHT_DISTANCE, this.flightDistance);
         tag.putInt(NbtConstants.DISTANCE_COVERED, this.distanceCovered);
         tag.putBoolean("canUseControls", this.canUseControls);
+        tag.putBoolean(NbtConstants.IS_PASSIVELY_REFUELING, this.isPassivelyRefuelling);
 
         if (targetLocation != null) {
             NbtConstants.putTardisNavLocation(tag, "ctrl_target", this.targetLocation);
@@ -160,7 +168,10 @@ public class TardisPilotingManager extends BaseHandler {
     }
 
     public void tick(Level level) {
+
+
         if (targetLocation == null) {
+
             var location = this.operator.getExteriorManager().getLastKnownLocation();
             if (targetLocation != null) {
                 this.targetLocation = location;
@@ -168,7 +179,6 @@ public class TardisPilotingManager extends BaseHandler {
                 this.targetLocation = TardisNavLocation.ORIGIN;
             }
         }
-
 
         if (isInFlight) {
             onFlightTick(level);
@@ -183,9 +193,17 @@ public class TardisPilotingManager extends BaseHandler {
             }
         }
 
-
         if (ticksSinceCrash > 0) {
             onCrashCooldownTick();
+        }
+
+        if (isPassivelyRefuelling && level.getGameTime() % 60 == 0) {
+            this.addFuel(10);
+
+            if (this.getFuel() >= this.getMaximumFuel()) {
+                this.setFuel(this.getMaximumFuel());
+                this.isPassivelyRefuelling = false;
+            }
         }
 
     }
@@ -196,8 +214,8 @@ public class TardisPilotingManager extends BaseHandler {
             ticksInFlight++;
 
             // Removing fuel once every 2.5 seconds
-            if (ticksInFlight % (2.5 * 20) == 0) {
-                this.removeFuel(this.getFlightFuelCost());
+            if (ticksInFlight % (45) == 0) {
+                this.removeFuel(this.getFlightFuelCost() * throttleStage);
             }
 
             if (this.operator.getLevel().getGameTime() % (20) == 0) {
@@ -207,11 +225,15 @@ public class TardisPilotingManager extends BaseHandler {
                     // If this tick was enough to push us over.
                     if (distanceCovered >= flightDistance) {
                         if (distanceCovered >= flightDistance && this.currentConsole != null) {
-                            level.playSound(null, currentConsole.getBlockPos(), SoundRegistry.DESTINATION_DING.get(), SoundSource.AMBIENT, 10f, 1f);
+                            level.playSound(null, currentConsole.getBlockPos(), TRSoundRegistry.DESTINATION_DING.get(), SoundSource.AMBIENT, 10f, 1f);
                             this.operator.getFlightDanceManager().stopDancing();
                         }
                     }
                 }
+            }
+
+            if (this.isOutOfFuel() && !this.isLanding() && this.ticksCrashing == 0) {
+                this.endFlightEarly(true);
             }
 
             if (this.isHandbrakeOn && !this.isLanding() && !this.isTakingOff() && this.ticksCrashing == 0) {
@@ -247,6 +269,10 @@ public class TardisPilotingManager extends BaseHandler {
         if (ticksCrashing == 1) {
             onCrashEnd();
         }
+
+
+
+
     }
 
 
@@ -271,7 +297,7 @@ public class TardisPilotingManager extends BaseHandler {
         if (ticksSinceCrash >= TICKS_COOLDOWN_MAX) {
             this.canUseControls = true;
             ticksSinceCrash = 0;
-            this.operator.getLevel().playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, SoundRegistry.TARDIS_SINGLE_FLY.get(), SoundSource.AMBIENT, 100f, 0.25f);
+            this.operator.getLevel().playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, TRSoundRegistry.TARDIS_SINGLE_FLY.get(), SoundSource.AMBIENT, 100f, 0.25f);
         }
     }
 
@@ -296,119 +322,99 @@ public class TardisPilotingManager extends BaseHandler {
         var maxBuildHeight = level.getMaxBuildHeight();
         var minHeight = level.getMinBuildHeight();
 
-        var failOffset = 1;
-        var attempts = 20;
-
-        var originalY = location.getPosition().getY();
-
-        // Do any specific dimension checks
-        //TODO: Handle dimension checks in a dedicated function, we already have duplicated codfein #getLegalPosition
-        if (level.dimension() == Level.NETHER) {
-            if (location.getPosition().getY() > 127) {
-                maxBuildHeight = 125;
-                failOffset = 10;
-                location.setPosition(new BlockPos(location.getPosition().getX(), 80, location.getPosition().getZ())); //TODO: Remove this hardcoding to continue searching for a spot
-            }
-        }
-
-        boolean isTargetFine = !isSolidBlock(level, location.getPosition()) && !isSolidBlock(level, location.getPosition().above()) && isSolidBlock(level, location.getPosition().below());
-        if (isTargetFine) {
-            var safeDir = findSafeDirection(location);
-            if (safeDir != null) {
-                return safeDir;
-            }
-        }
-
-        for (int i = 0; i < attempts; i++) {
-
-            location.setPosition(getLegalPosition(location.getLevel(), location.getPosition(), originalY));
-            var result = scanUpwardsFromCord(location, maxBuildHeight);
-            if (result != null && location.getPosition().getY() < maxBuildHeight && location.getPosition().getY() > minHeight) {
-                return result;
-            }
-
-            location.setPosition(getLegalPosition(location.getLevel(), location.getPosition(), originalY));
-            result = scanDownwardsFromCord(location, minHeight);
-            if (result != null && location.getPosition().getY() < maxBuildHeight && location.getPosition().getY() > minHeight) {
-                return result;
-            }
-
-            // Try the next interval in the rotation.
-            location.setPosition(getLegalPosition(location.getLevel(), location.getPosition(), originalY));
-            location.setPosition(location.getPosition().offset(location.getDirection().getNormal().multiply((int) (failOffset * (1 + ((float) i * 0.1f))))));
-        }
-
-
-        return location;
+        return findValidLocationInColumn(location, level, minHeight, maxBuildHeight);
     }
 
-    public BlockPos getLegalPosition(Level level, BlockPos pos, int originalY) {
-        if (level.dimension() == Level.NETHER) {
+    private TardisNavLocation findValidLocationInColumn(TardisNavLocation location, ServerLevel level, int minHeight, int maxBuildHeight) {
 
-            if (pos.getY() > level.getMaxBuildHeight() || originalY > level.getMaxBuildHeight()) {
-                return new BlockPos(pos.getX(), 60, pos.getZ()); //TODO: Remove this hardcoding and run a search below max height
+        ChunkPos chunkPos = level.getChunk(location.getPosition()).getPos();
+        //Force load chunk
+        level.setChunkForced(chunkPos.x, chunkPos.z, true); //Set chunk to be force loaded to properly remove block
+
+        // Fetch the row of blocks and filter them all out to air.
+        List<BlockPos> blockColumn = getBlockPosColumn(location.getPosition(), minHeight, maxBuildHeight);
+        List<BlockPos> filteredForAir = blockColumn.stream().filter(x -> isLegalLandingBlock(level, x)).toList();
+        List<BlockPos> filteredForNonAir = blockColumn.stream().filter(x -> !isLegalLandingBlock(level, x)).toList();
+
+        List<TardisNavLocation> solutionsInRow = new ArrayList<>();
+        for (BlockPos airPos : filteredForAir) {
+
+            // Ignore any higher scans above the roof.
+            if (level.dimension() == Level.NETHER && airPos.getY() > 125) {
+                continue;
+            }
+
+            BlockPos below = airPos.below();
+            BlockPos above = airPos.above();
+
+            // Does this position have the space for a TARDIS?
+            if (filteredForNonAir.contains(below) && filteredForAir.contains(above)) {
+
+                // Can we find a rotation for the TARDIS?
+
+                // Check front
+                Direction[] directions = new Direction[]{location.getDirection(), location.getDirection().getOpposite(), Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+
+                for (Direction direction : directions) {
+                    BlockPos directionOffset = BlockPos.of(BlockPos.offset(airPos.asLong(), direction));
+                    // Check that the column in the direction is empty and doesn't have a drop.
+                    if (isLegalLandingBlock(level, directionOffset)) {
+                        if (isLegalLandingBlock(level, directionOffset.above()) && !isLegalLandingBlock(level, directionOffset.below()) && !isLegalLandingBlock(level, directionOffset.below(2))) {
+                            solutionsInRow.add(new TardisNavLocation(airPos, direction, location.getLevel()));
+
+                        }
+                    }
+                }
+
             }
         }
 
-        return new BlockPos(pos.getX(), originalY, pos.getZ());
+
+        // We have all solutions. Let's find the closest.
+
+
+        if (solutionsInRow.size() > 0) {
+
+            TardisNavLocation closest = null;
+            int distance = Integer.MAX_VALUE;
+
+            for (TardisNavLocation potentialLocation : solutionsInRow) {
+                int distanceBetween = Math.abs(potentialLocation.getPosition().distManhattan(location.getPosition()));
+                if (distanceBetween < distance) {
+                    distance = distanceBetween;
+                    closest = potentialLocation;
+                }
+            }
+
+            return closest;
+
+        } else {
+
+            BlockPos directionOffset = BlockPos.of(BlockPos.offset(location.getPosition().asLong(), location.getDirection()));
+            TardisNavLocation nextLocation = new TardisNavLocation(directionOffset, location.getDirection(), location.getLevel());
+            return findValidLocationInColumn(nextLocation, level, minHeight, maxBuildHeight);
+        }
     }
+
+    private List<BlockPos> getBlockPosColumn(BlockPos referencePoint, int bottomLevel, int topLevel) {
+
+        List<BlockPos> positions = new ArrayList<>();
+
+        for (int i = bottomLevel; i <= topLevel; i++) {
+            positions.add(new BlockPos(referencePoint.getX(), i, referencePoint.getZ()));
+        }
+
+        return positions;
+    }
+
 
     /**
-     * Checks the tardis nav location for a variety of reasons that a given position would be unsafe to land at.
-     *
-     * @param location the coordinates to check against
-     * @return true if safe to land, otherwise false
-     */
-    public boolean isSafeToLand(TardisNavLocation location) {
-        if (!isSolidBlock(location.getLevel(), location.getPosition()) && isSolidBlock(location.getLevel(), location.getPosition().below()) && !isSolidBlock(location.getLevel(), location.getPosition().above())) {
-            return !location.getLevel().getBlockState(location.getPosition().below()).getFluidState().is(FluidTags.LAVA) && !location.getLevel().getBlockState(location.getPosition().below()).getFluidState().is(FluidTags.WATER);
-        }
-        return false;
-    }
-
-    public TardisNavLocation scanUpwardsFromCord(TardisNavLocation location, int maxHeight) {
-
-        int startingHeight = location.getPosition().getY();
-        for (int i = startingHeight; i < maxHeight; i++) {
-            if (isSafeToLand(location)) {
-                return findSafeDirection(location);
-            }
-
-            location.setPosition(location.getPosition().above(1));
-        }
-
-        return null;
-    }
-
-    public TardisNavLocation scanDownwardsFromCord(TardisNavLocation location, int minHeight) {
-
-        int startingHeight = location.getPosition().getY();
-        for (int i = startingHeight; i >= minHeight; i--) {
-            if (isSafeToLand(location)) {
-                return findSafeDirection(location);
-            }
-
-            location.setPosition(location.getPosition().below(1));
-        }
-
-        return null;
-    }
-
-    public TardisNavLocation findSafeDirection(TardisNavLocation location) {
-
-        Direction[] directions = new Direction[]{location.getDirection(), location.getDirection().getOpposite(), Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
-        for (Direction dir : directions) {
-            BlockPos basePos = BlockPos.of(BlockPos.offset(location.getPosition().asLong(), dir));
-            if (!isSolidBlock(location.getLevel(), basePos) && !isSolidBlock(location.getLevel(), basePos.above())) {
-                return new TardisNavLocation(location.getPosition(), dir, location.getLevel());
-            }
-        }
-
-        return null;
-    }
-
-    public boolean isSolidBlock(ServerLevel level, BlockPos pos) {
-        return level.getBlockState(pos).isSolid() || level.getBlockState(pos).liquid();
+     * Check if the block at the target position is a valid block to land inside.
+     * **/
+    public boolean isLegalLandingBlock(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        // Can land in air or override any block that can be marked as "replaceable" such as snow, tall grass etc.
+        return state.isAir() || (state.canBeReplaced() && state.getFluidState().isEmpty());
     }
 
     /**
@@ -417,9 +423,8 @@ public class TardisPilotingManager extends BaseHandler {
      * @return true if able to, false if not
      */
     public boolean canBeginFlight() {
-        return !operator.getInteriorManager().isGeneratingDesktop() && !operator.getInteriorManager().isWaitingToGenerate() && !isInFlight && ticksTakingOff <= 0 && !this.isHandbrakeOn && !this.isCrashing && !this.isOutOfFuel();
+        return !operator.getInteriorManager().isGeneratingDesktop() && !operator.getInteriorManager().isWaitingToGenerate() && !isInFlight && ticksTakingOff <= 0 && !this.isHandbrakeOn && !this.isCrashing && (!this.isOutOfFuel() || this.fuel > 5);
     }
-
 
     /**
      * Logic to handle starting flight
@@ -428,31 +433,45 @@ public class TardisPilotingManager extends BaseHandler {
      */
     public boolean beginFlight(boolean autoLand, Optional<GlobalConsoleBlockEntity> consoleBlockEntity) {
 
+        if (this.getFuel() < 50) {
+
+            operator.getLevel().players().forEach(x -> {
+                PlayerUtil.sendMessage(x, Component.translatable(ModMessages.CANNOT_START_NO_FUEL), true);
+            });
+
+            this.failTakeoff();
+            return false;
+        }
+
         if (this.targetLocation.getLevel().dimension() == Level.END) {
 
             if (!TardisHelper.hasTheEndBeenCompleted(this.targetLocation.getLevel())) {
-                if (this.currentConsole != null) {
-                    this.operator.getLevel().playSound(null, this.currentConsole.getBlockPos(), SoundRegistry.FLIGHT_FAIL_START.get(), SoundSource.BLOCKS, 1, 1);
-                }
 
+                failTakeoff();
 
                 for (Player player : this.operator.getLevel().players()) {
                     PlayerUtil.sendMessage(player, Component.translatable(ModMessages.NO_END_DRAGON_PREVENTS), true);
                 }
 
-                this.setThrottleStage(0);
                 return false;
             }
         }
 
+
+
         if (this.canBeginFlight()) {
             this.autoLand = autoLand;
+            this.isPassivelyRefuelling = false;
             this.flightDistance = 0;
             this.distanceCovered = 0;
             this.fastReturnLocation = this.operator.getExteriorManager().getLastKnownLocation();
 
             TardisNavLocation targetPosition = this.operator.getPilotingManager().getTargetLocation();
             TardisNavLocation lastKnownLocation = this.operator.getExteriorManager().getLastKnownLocation();
+
+            // Do we not have a last known location?
+
+            System.out.println(lastKnownLocation.getPosition().toShortString());
 
             this.flightDistance = calculateFlightDistance(lastKnownLocation, targetPosition);
 
@@ -463,8 +482,8 @@ public class TardisPilotingManager extends BaseHandler {
 
 
             operator.setDoorClosed(true);
-            operator.getLevel().playSound(null, operator.getInternalDoor().getDoorPosition(), SoundRegistry.TARDIS_TAKEOFF.get(), SoundSource.AMBIENT, 10f, 1f);
-            operator.getExteriorManager().playSoundAtShell(SoundRegistry.TARDIS_TAKEOFF.get(), SoundSource.BLOCKS, 1, 1);
+            operator.getLevel().playSound(null, operator.getInternalDoor().getDoorPosition(), TRSoundRegistry.TARDIS_TAKEOFF.get(), SoundSource.AMBIENT, 10f, 1f);
+            operator.getExteriorManager().playSoundAtShell(TRSoundRegistry.TARDIS_TAKEOFF.get(), SoundSource.BLOCKS, 1, 1);
             this.isInFlight = true;
             this.ticksInFlight = 0;
             this.ticksTakingOff = 1;
@@ -475,6 +494,16 @@ public class TardisPilotingManager extends BaseHandler {
             return true;
         }
         return false;
+    }
+
+    public void failTakeoff() {
+        if (this.currentConsole != null) {
+            this.operator.getLevel().playSound(null, this.currentConsole.getBlockPos(), TRSoundRegistry.FLIGHT_FAIL_START.get(), SoundSource.BLOCKS, 1, 1);
+
+        }
+
+        this.throttleStage = 0;
+
     }
 
     /**
@@ -499,7 +528,11 @@ public class TardisPilotingManager extends BaseHandler {
         BlockPos startingPointPos = startingPoint.getPosition();
         BlockPos endingPointPos = endingPoint.getPosition();
 
-        int distance = startingPointPos.distManhattan(endingPointPos);
+        int distance = 1000;
+
+        if (startingPointPos != null && endingPointPos != null) {
+            distance = startingPointPos.distManhattan(endingPointPos);
+        }
 
         if (startingPoint.getLevel() != endingPoint.getLevel()) {
             distance += 500 + this.operator.getLevel().random.nextInt(250);
@@ -529,12 +562,12 @@ public class TardisPilotingManager extends BaseHandler {
 
             exteriorManager.placeExteriorBlock(operator, location);
 
-            exteriorManager.playSoundAtShell(SoundRegistry.TARDIS_LAND.get(), SoundSource.BLOCKS, 1, 1);
+            exteriorManager.playSoundAtShell(TRSoundRegistry.TARDIS_LAND.get(), SoundSource.BLOCKS, 1, 1);
 
             if (currentConsole != null) {
-                level.playSound(null, currentConsole.getBlockPos(), SoundRegistry.TARDIS_LAND.get(), SoundSource.AMBIENT, 10f, 1f);
+                level.playSound(null, currentConsole.getBlockPos(), TRSoundRegistry.TARDIS_LAND.get(), SoundSource.AMBIENT, 10f, 1f);
             } else {
-                level.playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, SoundRegistry.TARDIS_LAND.get(), SoundSource.AMBIENT, 10f, 1f);
+                level.playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, TRSoundRegistry.TARDIS_LAND.get(), SoundSource.AMBIENT, 10f, 1f);
             }
 
             int totalPoints = distanceCovered / 10;
@@ -603,6 +636,11 @@ public class TardisPilotingManager extends BaseHandler {
         this.isInFlight = false;
         this.ticksTakingOff = 0;
         this.autoLand = false;
+
+        if (this.getFuel() < getMaximumFuel() * 0.1) {
+            this.operator.getLevel().playSound(null, this.currentConsoleBlockPos, TRSoundRegistry.LOW_FUEL.get(), SoundSource.AMBIENT, 1000, 1 );
+        }
+
         TardisEvents.LAND.invoker().onLand(operator, getTargetLocation().getLevel(), getTargetLocation().getPosition());
     }
 
@@ -646,8 +684,8 @@ public class TardisPilotingManager extends BaseHandler {
 
         tardisExteriorManager.placeExteriorBlock(operator, location);
 
-        tardisExteriorManager.playSoundAtShell(SoundRegistry.TARDIS_CRASH_LAND.get(), SoundSource.BLOCKS, 1, 1);
-        tarisLevel.playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, SoundRegistry.TARDIS_CRASH_LAND.get(), SoundSource.BLOCKS, 10f, 1f);
+        tardisExteriorManager.playSoundAtShell(TRSoundRegistry.TARDIS_CRASH_LAND.get(), SoundSource.BLOCKS, 1, 1);
+        tarisLevel.playSound(null, TardisArchitectureHandler.DESKTOP_CENTER_POS, TRSoundRegistry.TARDIS_CRASH_LAND.get(), SoundSource.BLOCKS, 10f, 1f);
     }
 
     public void onCrashEnd() {
@@ -801,7 +839,7 @@ public class TardisPilotingManager extends BaseHandler {
         Level level = this.currentConsole.getLevel();
 
         level.setBlockAndUpdate(this.currentConsole.getBlockPos(), this.currentConsole.getBlockState().setValue(GlobalConsoleBlock.POWERED, true));
-        level.playSound(null, this.currentConsole.getBlockPos(), SoundRegistry.CONSOLE_POWER_ON.get(), SoundSource.BLOCKS, 2f, 1f);
+        level.playSound(null, this.currentConsole.getBlockPos(), TRSoundRegistry.CONSOLE_POWER_ON.get(), SoundSource.BLOCKS, 2f, 1f);
     }
 
     /**
@@ -894,6 +932,25 @@ public class TardisPilotingManager extends BaseHandler {
      */
     public void removeFuel(double amount) {
         this.setFuel(Math.max(0, this.fuel - amount));
+    }
+
+    /**
+     * Is the TARDIS set to refuel passively?
+     * **/
+    public boolean isPassivelyRefuelling() {return this.isPassivelyRefuelling;}
+
+    /**
+     * Sets the TARDIS to passively fuel
+     * @return Returns if it was successful in updating the state. Will fail if the TARDIS is in flight or has crashed.
+     */
+    public boolean setPassivelyRefuelling(boolean refuel) {
+        if (this.isInFlight() || !this.canUseControls()) {
+            return false;
+        }
+
+        this.isPassivelyRefuelling = refuel;
+
+        return true;
     }
 
     /**

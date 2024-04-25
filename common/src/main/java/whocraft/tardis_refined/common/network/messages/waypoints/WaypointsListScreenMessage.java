@@ -11,15 +11,16 @@ import whocraft.tardis_refined.common.network.MessageS2C;
 import whocraft.tardis_refined.common.network.MessageType;
 import whocraft.tardis_refined.common.network.TardisNetwork;
 import whocraft.tardis_refined.common.tardis.TardisNavLocation;
+import whocraft.tardis_refined.common.tardis.TardisWaypoint;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class WaypointsListScreenMessage extends MessageS2C {
 
-    private Collection<TardisNavLocation> waypoints;
+    private Collection<TardisWaypoint> waypoints;
 
-    public WaypointsListScreenMessage(Collection<TardisNavLocation> waypoints) {
+    public WaypointsListScreenMessage(Collection<TardisWaypoint> waypoints) {
         this.waypoints = waypoints;
     }
 
@@ -27,9 +28,10 @@ public class WaypointsListScreenMessage extends MessageS2C {
         waypoints = new ArrayList<>();
         int size = friendlyByteBuf.readInt();
         for (int i = 0; i < size; i++) {
-            CompoundTag tardisNav = friendlyByteBuf.readNbt();
-            TardisNavLocation tardisNavLocation = TardisNavLocation.deserialise(tardisNav);
-            waypoints.add(tardisNavLocation);
+            CompoundTag tardisWay = friendlyByteBuf.readNbt();
+            TardisWaypoint waypoint = TardisWaypoint.deserialise(tardisWay);
+
+            waypoints.add(waypoint);
         }
     }
 
@@ -42,7 +44,7 @@ public class WaypointsListScreenMessage extends MessageS2C {
     @Override
     public void toBytes(FriendlyByteBuf buf) {
         buf.writeInt(waypoints.size());
-        for (TardisNavLocation waypoint : waypoints) {
+        for (TardisWaypoint waypoint : waypoints) {
             buf.writeNbt(waypoint.serialise());
         }
     }

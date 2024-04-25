@@ -1,9 +1,9 @@
 package whocraft.tardis_refined.common.tardis.control.flight;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import whocraft.tardis_refined.common.capability.TardisLevelOperator;
@@ -18,7 +18,6 @@ import whocraft.tardis_refined.common.util.MiscHelper;
 import whocraft.tardis_refined.common.util.PlayerUtil;
 import whocraft.tardis_refined.common.util.TardisHelper;
 import whocraft.tardis_refined.constants.ModMessages;
-import whocraft.tardis_refined.registry.SoundRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,12 @@ import java.util.List;
 import static net.minecraft.world.level.Level.OVERWORLD;
 
 public class DimensionalControl extends Control {
-
+    public DimensionalControl(ResourceLocation id) {
+        super(id);
+    }
+    public DimensionalControl(ResourceLocation id, String langId){
+        super(id, langId);
+    }
     private List<ServerLevel> getAllowedDimensions(MinecraftServer server) {
         var filteredDimensions = new ArrayList<ServerLevel>();
         var filteredLevels = server.getAllLevels();
